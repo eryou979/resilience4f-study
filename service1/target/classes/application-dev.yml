@@ -1,0 +1,46 @@
+resilience4j:
+  circuitbreaker: # 断路器配置
+    configs:
+      default:
+        register-health-indicator: true # 注册健康状态到 actuator
+        sliding-window-size: 10 # 滑动窗口大小, 用于记录请求结果. 默认 100
+        sliding-window-type: count_based # 滑动窗口类型 count_based(基于计数)/time_based(基于时间, 单位 s). 默认 count_based
+        failure-rate-threshold: 50 # 故障率阈值, 单位 %. 默认 50
+        permitted-number-of-calls-in-half-open-state: 5 # 允许 half_open 状态请求次数. 默认 10
+        automatic-transition-from-open-to-half-open-enabled: true # 自动从 open 状态转到 half_open 状态. 默认 false
+        wait-duration-in-open-state: 1s # open 状态持续时间, 时间到了会转到 half_open 状态. 默认单位 ms,  60000
+        max-wait-duration-in-half-open-state: 6s # half_open 状态持续时间, 时间到了还没转为 closed 状态, 就会转到 open 状态. 默认单位 ms, 0, 表示无限等待
+        record-exceptions: # 记录失败的异常集合
+          - java.lang.RuntimeException
+        ignore-exceptions: # 忽略失败的异常集合
+    instances:
+      service1:
+        base-config: default
+        minimum-number-of-calls: 5 # 每个滑动窗口周期至少记录数. 默认 100
+
+  bulkhead: # 信号量舱壁
+    configs:
+      default:
+        max-concurrent-calls: 1 # 最大并发量. 默认 25
+        max-wait-duration: 1s # 并发饱和时, 线程等待时间. 默认单位 ms, 0, 表示不等待
+    instances:
+      service1:
+        base-config: default
+
+  ratelimiter: # 限流器
+    configs:
+      default:
+        register-health-indicator: true # 注册健康状态到 actuator
+        timeout-duration: 1s # 当速率满时, 线程等待时间
+        limit-refresh-period: 10s # 刷新周期
+        limit-for-period: 1 # 周期可用权限数
+    instances:
+      service1:
+        base-config: default
+
+  retry: # 重试
+    configs:
+      default:
+        max-attempts: 3 # 最大尝试次数(包括初次)
+        wait-duration: 1s # 重试之间的等待时间
+        retry-exceptions:
